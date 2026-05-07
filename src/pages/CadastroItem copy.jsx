@@ -188,7 +188,7 @@ const CadastroItem = () => {
     <Box p={3}>
       <Paper sx={{ p: 4, mb: 4 }}>
         <Typography variant="h5" mb={2}>
-          {editandoId ? 'Editar Indicador' : 'Cadastro de Indicador teste'}
+          {editandoId ? 'Editar Indicador' : 'Cadastro de Indicador'}
         </Typography>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6}>

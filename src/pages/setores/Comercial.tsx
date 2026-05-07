@@ -83,7 +83,7 @@ const Comercial: React.FC<ComercialProps> = ({ setorId: propSetorId }) => {
   const { setorId: stateSetorId = null } = (location.state || {}) as { setorId?: number | null };
   const setorId = propSetorId ?? stateSetorId;
 
-  const [selectedYear, setSelectedYear] = useState("2025");
+  const [selectedYear, setSelectedYear] = useState("2026");
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const token = localStorage.getItem("token");
@@ -406,12 +406,12 @@ const Comercial: React.FC<ComercialProps> = ({ setorId: propSetorId }) => {
         const crmRows: any[] = [];
         if (propostasData.totalPropostas) {
           crmRows.push(
-            montarLinhaCrm(propostasData.totalPropostas, "Total de Propostas", false)
+            montarLinhaCrm(propostasData.totalPropostas, "Total de Proposta Qtd.", false)
           );
         }
         if (propostasData.totalValorPropostas) {
           crmRows.push(
-            montarLinhaCrm(propostasData.totalValorPropostas, "Valor Total de Propostas", true)
+            montarLinhaCrm(propostasData.totalValorPropostas, "Propostas Geradas R$", true)
           );
         }
         if (propostasData.totalPropostasGanhas) {

@@ -60,14 +60,14 @@ const AtualizacaoItem = () => {
     Dezembro: '12'
   };
 
-  const anos = ['2025', '2024', '2023', '2022'];
+  const anos = ['2029','2028','2027','2026','2025'];
   const token = localStorage.getItem('token');
 
   const limparFormulario = () => {
     setForm({
       setorId: '',
       itemId: '',
-      ano: new Date().getFullYear(),
+      ano: String(new Date().getFullYear()),
       mes: '',
       valorFieam: '',
       valorSesi: '',

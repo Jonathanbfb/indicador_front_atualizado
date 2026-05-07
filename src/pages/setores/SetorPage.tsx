@@ -87,7 +87,7 @@ export default function SetorPage() {
   const [loadingSetor, setLoadingSetor] = useState(true);
 
   // 2) Estado para controlar ano selecionado e linhas da tabela
-  const [selectedYear, setSelectedYear] = useState("2025");
+  const [selectedYear, setSelectedYear] = useState("2026");
   const [rows, setRows] = useState<any[]>([]);
   const [loadingRows, setLoadingRows] = useState(false);
 
