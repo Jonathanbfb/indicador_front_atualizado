@@ -509,11 +509,14 @@ export default function SetorPage() {
         let linhaAdesoes: any   = null;
         let linhaRenovacoes: any = null;
 
+        let linhaEquipeInterna: any = null;
+
         if (isBackOffice) {
           try {
-            const [adesaoRes, renovacaoRes] = await Promise.all([
+            const [adesaoRes, renovacaoRes, equipeRes] = await Promise.all([
               api.get(`/propostas/adesoes?ano=${selectedYear}`),
               api.get(`/propostas/renovacoes?ano=${selectedYear}`),
+              api.get(`/propostas/equipe-interna?ano=${selectedYear}`),
             ]);
             linhaAdesoes = buildLinhaCrm(
               "Número de Adesões",
@@ -524,6 +527,11 @@ export default function SetorPage() {
               "Número de Renovações",
               "Propostas com 'RENOVAÇÃO/RENOVACAO' no nome, status Ganha+Ativa, data de modificação (CRM).",
               renovacaoRes.data.porMesPorInst
+            );
+            linhaEquipeInterna = buildLinhaCrm(
+              "Propostas Criadas pela Equipe Interna",
+              "Propostas criadas pelas Consultoras PJ Internas (Brenda, Joycilene, Keite), todos os status, data de criação (CRM).",
+              equipeRes.data.porMesPorInst
             );
           } catch (_e) {
             // falha silenciosa
@@ -540,8 +548,9 @@ export default function SetorPage() {
           linhaHoras,
           linhaSomaAtividades,
           linhaMediaHoras,
-          ...(linhaAdesoes    ? [linhaAdesoes]    : []),
-          ...(linhaRenovacoes ? [linhaRenovacoes] : []),
+          ...(linhaAdesoes       ? [linhaAdesoes]       : []),
+          ...(linhaRenovacoes    ? [linhaRenovacoes]    : []),
+          ...(linhaEquipeInterna ? [linhaEquipeInterna] : []),
           ...orderedRows,
         ];
 
