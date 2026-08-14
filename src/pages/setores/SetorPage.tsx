@@ -461,58 +461,72 @@ export default function SetorPage() {
         }
 
         // -------------------------------------------------------------
-        //  2.6b) Para Back Office: busca "Número de Adesões" do CRM
+        //  2.6b) Para Back Office: busca Adesões e Renovações do CRM
         // -------------------------------------------------------------
-        let linhaAdesoes: any = null;
+        const buildLinhaCrm = (
+          nome: string,
+          descricao: string,
+          porMes: Record<number, { fieam: number; sesi: number; senai: number; iel: number; total: number }>
+        ): any => {
+          const linha: any = {
+            indicadores: nome,
+            descricao,
+            jan: "-", fev: "-", mar: "-", abr: "-", mai: "-", jun: "-",
+            jul: "-", ago: "-", set: "-", out: "-", nov: "-", dez: "-",
+            acumulado: { fieam: "-", sesi: "-", senai: "-", iel: "-", "total geral": "-" },
+            valoresPorMesPorInst: {} as Record<number, Record<string, string>>,
+          };
+
+          const fmtN = (n: number) => n > 0 ? n.toLocaleString("pt-BR") : "-";
+          let acFieam = 0, acSesi = 0, acSenai = 0, acIel = 0, acTotal = 0;
+
+          MES_KEYS.forEach((mesKey, idx) => {
+            const m = idx + 1;
+            const d = porMes[m];
+            if (d && d.total > 0) linha[mesKey] = d.total.toLocaleString("pt-BR");
+            linha.valoresPorMesPorInst[m] = {
+              fieam: fmtN(d?.fieam ?? 0),
+              sesi:  fmtN(d?.sesi  ?? 0),
+              senai: fmtN(d?.senai ?? 0),
+              iel:   fmtN(d?.iel   ?? 0),
+              "total geral": fmtN(d?.total ?? 0),
+            };
+            acFieam  += d?.fieam  ?? 0;
+            acSesi   += d?.sesi   ?? 0;
+            acSenai  += d?.senai  ?? 0;
+            acIel    += d?.iel    ?? 0;
+            acTotal  += d?.total  ?? 0;
+          });
+
+          linha.acumulado = {
+            fieam: fmtN(acFieam), sesi: fmtN(acSesi),
+            senai: fmtN(acSenai), iel: fmtN(acIel),
+            "total geral": fmtN(acTotal),
+          };
+          return linha;
+        };
+
+        let linhaAdesoes: any   = null;
+        let linhaRenovacoes: any = null;
+
         if (isBackOffice) {
           try {
-            const adesaoRes = await api.get(`/propostas/adesoes?ano=${selectedYear}`);
-            const porMes: Record<number, { fieam: number; sesi: number; senai: number; iel: number; total: number }> = adesaoRes.data.porMesPorInst;
-
-            const linhaA: any = {
-              indicadores: "Número de Adesões",
-              descricao: "Propostas com 'ADESÃO' no nome, status GANHA, agrupadas por mês de modificação (CRM).",
-              jan: "-", fev: "-", mar: "-", abr: "-", mai: "-", jun: "-",
-              jul: "-", ago: "-", set: "-", out: "-", nov: "-", dez: "-",
-              acumulado: { fieam: "-", sesi: "-", senai: "-", iel: "-", "total geral": "-" },
-              valoresPorMesPorInst: {} as Record<number, Record<string, string>>,
-            };
-
-            let acFieam = 0, acSesi = 0, acSenai = 0, acIel = 0, acTotal = 0;
-
-            MES_KEYS.forEach((mesKey, idx) => {
-              const m = idx + 1;
-              const d = porMes[m];
-              if (d && d.total > 0) {
-                linhaA[mesKey] = d.total.toLocaleString("pt-BR");
-              }
-              const fmtN = (n: number) => n > 0 ? n.toLocaleString("pt-BR") : "-";
-              linhaA.valoresPorMesPorInst[m] = {
-                fieam: fmtN(d?.fieam ?? 0),
-                sesi:  fmtN(d?.sesi  ?? 0),
-                senai: fmtN(d?.senai ?? 0),
-                iel:   fmtN(d?.iel   ?? 0),
-                "total geral": fmtN(d?.total ?? 0),
-              };
-              acFieam  += d?.fieam  ?? 0;
-              acSesi   += d?.sesi   ?? 0;
-              acSenai  += d?.senai  ?? 0;
-              acIel    += d?.iel    ?? 0;
-              acTotal  += d?.total  ?? 0;
-            });
-
-            const fmtAc = (n: number) => n > 0 ? n.toLocaleString("pt-BR") : "-";
-            linhaA.acumulado = {
-              fieam: fmtAc(acFieam),
-              sesi:  fmtAc(acSesi),
-              senai: fmtAc(acSenai),
-              iel:   fmtAc(acIel),
-              "total geral": fmtAc(acTotal),
-            };
-
-            linhaAdesoes = linhaA;
+            const [adesaoRes, renovacaoRes] = await Promise.all([
+              api.get(`/propostas/adesoes?ano=${selectedYear}`),
+              api.get(`/propostas/renovacoes?ano=${selectedYear}`),
+            ]);
+            linhaAdesoes = buildLinhaCrm(
+              "Número de Adesões",
+              "Propostas com 'ADESÃO/ADESAO' no nome, status Ganha+Ativa, data de modificação (CRM).",
+              adesaoRes.data.porMesPorInst
+            );
+            linhaRenovacoes = buildLinhaCrm(
+              "Número de Renovações",
+              "Propostas com 'RENOVAÇÃO/RENOVACAO' no nome, status Ganha+Ativa, data de modificação (CRM).",
+              renovacaoRes.data.porMesPorInst
+            );
           } catch (_e) {
-            // falha silenciosa — Back Office continua sem a linha
+            // falha silenciosa
           }
         }
 
@@ -526,7 +540,8 @@ export default function SetorPage() {
           linhaHoras,
           linhaSomaAtividades,
           linhaMediaHoras,
-          ...(linhaAdesoes ? [linhaAdesoes] : []),
+          ...(linhaAdesoes    ? [linhaAdesoes]    : []),
+          ...(linhaRenovacoes ? [linhaRenovacoes] : []),
           ...orderedRows,
         ];
 
