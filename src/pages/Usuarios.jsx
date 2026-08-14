@@ -4,7 +4,9 @@ import {
   TableRow, TableCell, Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, MenuItem, Select, InputLabel, FormControl, Snackbar, Alert
 } from '@mui/material';
-import { Edit, Refresh, Delete } from '@mui/icons-material';
+import { Edit, Refresh, Delete, Visibility, VisibilityOff } from '@mui/icons-material';
+import InputAdornment from '@mui/material/InputAdornment';
+import Chip from '@mui/material/Chip';
 import api from '../services/api';
 
 const Usuarios = () => {
@@ -22,6 +24,9 @@ const Usuarios = () => {
     statusSenha: false
   });
   const [editingId, setEditingId] = useState(null);
+  const [showSenha, setShowSenha] = useState(false);
+  const [showConfirmSenha, setShowConfirmSenha] = useState(false);
+  const [confirmSenha, setConfirmSenha] = useState('');
   const [notificacao, setNotificacao] = useState({ open: false, tipo: 'success', mensagem: '' });
 
   const token = localStorage.getItem('token');
@@ -50,32 +55,36 @@ const Usuarios = () => {
     }
   };
 
+  const fecharDialog = () => {
+    setOpenDialog(false);
+    setForm({ nome: '', email: '', senha: '', setorIds: [], perfilId: '', jornadaTrabalho: '', statusSenha: false });
+    setEditingId(null);
+    setConfirmSenha('');
+    setShowSenha(false);
+    setShowConfirmSenha(false);
+  };
+
   const handleSubmit = async () => {
     try {
+      if (form.perfilId === "" || form.setorIds.length === 0 || form.jornadaTrabalho === '') {
+        setNotificacao({ open: true, tipo: 'error', mensagem: 'Há informações faltando, Tente novamente!' });
+        return;
+      }
+
+      if (form.senha && form.senha !== confirmSenha) {
+        setNotificacao({ open: true, tipo: 'error', mensagem: 'As senhas não coincidem.' });
+        return;
+      }
+
       if (editingId) {
-
-        if (form.perfilId === "" || form.setorIds.length === 0 || form.jornadaTrabalho === '') {
-          setNotificacao({ open: true, tipo: 'error', mensagem: 'Há informações faltando, Tente novamente!' });
-          return
-        }
-
         await api.put(`/usuarios/${editingId}`, form, { headers: { Authorization: `Bearer ${token}` } });
         setNotificacao({ open: true, tipo: 'success', mensagem: 'Usuário atualizado com sucesso!' });
       } else {
-
-        if (form.perfilId === "" || form.setorIds.length === 0 || form.jornadaTrabalho === '') {
-          setNotificacao({ open: true, tipo: 'error', mensagem: 'Há informações faltando, Tente novamente!' });
-          return
-        }
-
         await api.post('/usuarios', form, { headers: { Authorization: `Bearer ${token}` } });
         setNotificacao({ open: true, tipo: 'success', mensagem: 'Usuário cadastrado com sucesso!' });
       }
 
-      setOpenDialog(false);
-      setForm({ nome: '', email: '', senha: '', setorIds: [], perfilId: '', jornadaTrabalho: '', statusSenha: false });
-      console.log(form)
-      setEditingId(null);
+      fecharDialog();
       fetchUsuarios();
     } catch (error) {
       const msg = error.response?.data?.message || 'Erro ao salvar usuário';
@@ -118,6 +127,9 @@ const Usuarios = () => {
       jornadaTrabalho: usuario.jornadaTrabalho,
       statusSenha: usuario.statusSenha
     });
+    setConfirmSenha('');
+    setShowSenha(false);
+    setShowConfirmSenha(false);
     setEditingId(usuario.id);
     setOpenDialog(true);
   };
@@ -137,7 +149,7 @@ const Usuarios = () => {
           <TableRow>
             <TableCell>Nome</TableCell>
             <TableCell>Email</TableCell>
-            <TableCell>Status da Senha</TableCell>
+            <TableCell>Perfil</TableCell>
             <TableCell>Ações</TableCell>
           </TableRow>
         </TableHead>
@@ -146,7 +158,16 @@ const Usuarios = () => {
             <TableRow key={u.id}>
               <TableCell>{u.nome}</TableCell>
               <TableCell>{u.email}</TableCell>
-              <TableCell>{u.statusSenha ? 'Alterada' : 'Inicial'}</TableCell>
+              <TableCell>
+                {(() => {
+                  const perfil = perfis.find(p => p.id === u.perfilId);
+                  const nome = perfil?.nome || perfil?.tipo || '-';
+                  const cor = nome === 'INATIVO' ? 'error'
+                    : nome === 'Administrador' ? 'primary'
+                    : 'default';
+                  return <Chip label={nome} color={cor} size="small" />;
+                })()}
+              </TableCell>
               <TableCell>
                 <IconButton onClick={() => handleEdit(u)}><Edit /></IconButton>
                 <IconButton onClick={() => handleResetSenha(u.id)}><Refresh /></IconButton>
@@ -157,12 +178,57 @@ const Usuarios = () => {
         </TableBody>
       </Table>
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+      <Dialog open={openDialog} onClose={fecharDialog} maxWidth="sm" fullWidth>
         <DialogTitle>{editingId ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
         <DialogContent>
           <TextField label="Nome" fullWidth margin="dense" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
           <TextField label="Email" fullWidth margin="dense" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <TextField label="Senha" type="password" fullWidth margin="dense" value={form.senha} onChange={(e) => setForm({ ...form, senha: e.target.value })} />
+
+          {/* Redefinir Senha */}
+          <Typography sx={{ fontSize: 12, fontWeight: 600, color: '#6b7280', mt: 1.5, mb: 0.5, textTransform: 'uppercase', letterSpacing: 0.8 }}>
+            {editingId ? 'Redefinir Senha' : 'Senha'}
+          </Typography>
+          <TextField
+            label={editingId ? 'Nova Senha' : 'Senha'}
+            type={showSenha ? 'text' : 'password'}
+            fullWidth
+            margin="dense"
+            value={form.senha}
+            onChange={(e) => setForm({ ...form, senha: e.target.value })}
+            helperText={editingId ? 'Deixe em branco para não alterar' : ''}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setShowSenha(v => !v)} edge="end" tabIndex={-1}>
+                    {showSenha
+                      ? <VisibilityOff fontSize="small" sx={{ color: '#111' }} />
+                      : <Visibility fontSize="small" sx={{ color: '#111' }} />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          <TextField
+            label="Confirmar Senha"
+            type={showConfirmSenha ? 'text' : 'password'}
+            fullWidth
+            margin="dense"
+            value={confirmSenha}
+            onChange={(e) => setConfirmSenha(e.target.value)}
+            error={confirmSenha.length > 0 && confirmSenha !== form.senha}
+            helperText={confirmSenha.length > 0 && confirmSenha !== form.senha ? 'As senhas não coincidem' : ''}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setShowConfirmSenha(v => !v)} edge="end" tabIndex={-1}>
+                    {showConfirmSenha
+                      ? <VisibilityOff fontSize="small" sx={{ color: '#111' }} />
+                      : <Visibility fontSize="small" sx={{ color: '#111' }} />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
 
           <FormControl fullWidth margin="dense">
             <InputLabel>Setores</InputLabel>
@@ -181,16 +247,18 @@ const Usuarios = () => {
           <FormControl fullWidth margin="dense">
             <InputLabel>Perfil</InputLabel>
             <Select value={form.perfilId} label="Perfil" onChange={(e) => setForm({ ...form, perfilId: e.target.value })}>
-              {perfis.map((perfil) => (
-                <MenuItem key={perfil.id} value={perfil.id}>{perfil.nome}</MenuItem>
-              ))}
+              {perfis
+                .filter(p => ['Administrador', 'Editor', 'Visualizador', 'INATIVO'].includes(p.nome || p.tipo))
+                .map((perfil) => (
+                  <MenuItem key={perfil.id} value={perfil.id}>{perfil.nome || perfil.tipo}</MenuItem>
+                ))}
             </Select>
           </FormControl>
 
           <TextField label="Jornada de Trabalho (ex: 08:00)" fullWidth margin="dense" value={form.jornadaTrabalho.trim()} onChange={(e) => setForm({ ...form, jornadaTrabalho: e.target.value })} />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancelar</Button>
+          <Button onClick={fecharDialog}>Cancelar</Button>
           <Button onClick={handleSubmit} variant="contained">Salvar</Button>
         </DialogActions>
       </Dialog>

@@ -231,7 +231,7 @@ const JornadaColaboradores = () => {
     setNotificacao({ open: true, tipo: 'success', mensagem: 'Valor atualizado localmente.' });
   };
 
-  // 8) Envia ao backend (PUT para updates, POST para novos), sem checar “nenhuma jornada alterada”
+  // 8) Envia ao backend (PUT para updates, POST para novos), sem checar "nenhuma jornada alterada"
   const cadastrarJornadas = async () => {
     try {
       const setorObj = dados[0]; 

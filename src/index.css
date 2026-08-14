@@ -24,8 +24,6 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
 }
@@ -64,5 +62,68 @@ button:focus-visible {
   }
   button {
     background-color: #f9f9f9;
+  }
+}
+
+/* ── Impressão ─────────────────────────────────────────────────────── */
+@media print {
+  /* Ocultar elementos de navegação e ação */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Página paisagem para tabelas largas */
+  @page {
+    size: landscape;
+    margin: 1.2cm 1cm;
+  }
+
+  /* Preservar cores de fundo (header azul, linhas alternadas) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  /* Conteúdo principal ocupa 100% sem scroll */
+  .layout-main {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  /* Paper e TableContainer não cortam a tabela */
+  .MuiPaper-root {
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .MuiTableContainer-root {
+    overflow: visible !important;
+  }
+
+  /* Tabela ocupa toda a largura disponível */
+  table {
+    width: 100% !important;
+    page-break-inside: auto;
+  }
+
+  /* Cabeçalho repete em cada página */
+  thead {
+    display: table-header-group;
+  }
+
+  /* Não quebrar linha no meio */
+  tr {
+    page-break-inside: avoid;
+  }
+
+  /* Remover sticky das colunas fixadas (posicionamento absoluto não faz sentido em print) */
+  th, td {
+    position: static !important;
+    box-shadow: none !important;
   }
 }

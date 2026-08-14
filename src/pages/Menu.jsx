@@ -1,207 +1,308 @@
 import React, { useEffect, useState } from 'react';
+import { Box, Typography, Grid2 as Grid, Paper, Avatar, useMediaQuery } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import {
-  Box, Drawer, List, ListItemIcon, ListItemText, Toolbar, CssBaseline, Typography, Grid, Paper
-} from '@mui/material';
-import { Link as RouterLink, Outlet, useLocation } from 'react-router-dom';
-import {
-  PersonAdd as PersonAddIcon,
-  Domain as DomainIcon,
-  Inventory as InventoryIcon,
-  History as HistoryIcon,
-  Update as UpdateIcon,
-  CalendarMonth as CalendarMonthIcon,
-  Home as HomeIcon
+  NorthEast as ArrowIcon,
+  Handshake as ComercialIcon,
+  Palette as DesignIcon,
+  Campaign as PropagandaIcon,
+  SupportAgent as ContactIcon,
+  Share as RedesSociaisIcon,
+  TrendingUp as MarketingIcon,
+  AdminPanelSettings as AdministrativoIcon,
+  Insights as InteligenciaIcon,
+  Dashboard as PanoramaIcon,
+  Construction as ConstrucaoIcon,
+  HealthAndSafety as SaudeIcon,
+  School as EducacaoIcon,
+  Groups as RHIcon,
+  AccountBalance as FinanceiroIcon,
+  Gavel as JuridicoIcon,
+  Engineering as TecnologiaIcon,
+  Category as DefaultIcon,
 } from '@mui/icons-material';
-import { motion } from 'framer-motion';
-import ResponsiveAppBar from './ResponsiveAppBar';
-import Sidebar from '../pages/setores/Sidebar';
 import api from '../services/api';
 
-const drawerWidth = 240;
-const MotionListItem = motion(Box);
+const ICONES_SETOR = {
+  'comercial':                         <ComercialIcon />,
+  'design':                            <DesignIcon />,
+  'promoções e propaganda':            <PropagandaIcon />,
+  'promocoes e propaganda':            <PropagandaIcon />,
+  'contact center':                    <ContactIcon />,
+  'redes sociais':                     <RedesSociaisIcon />,
+  'marketing':                         <MarketingIcon />,
+  'administrativo':                    <AdministrativoIcon />,
+  'back office':                       <AdministrativoIcon />,
+  'inteligência e pesquisa de mercado':<InteligenciaIcon />,
+  'inteligencia e pesquisa de mercado':<InteligenciaIcon />,
+  'panorama geral':                    <PanoramaIcon />,
+  'construção':                        <ConstrucaoIcon />,
+  'construcao':                        <ConstrucaoIcon />,
+  'saúde':                             <SaudeIcon />,
+  'saude':                             <SaudeIcon />,
+  'educação':                          <EducacaoIcon />,
+  'educacao':                          <EducacaoIcon />,
+  'recursos humanos':                  <RHIcon />,
+  'rh':                                <RHIcon />,
+  'financeiro':                        <FinanceiroIcon />,
+  'jurídico':                          <JuridicoIcon />,
+  'juridico':                          <JuridicoIcon />,
+  'tecnologia':                        <TecnologiaIcon />,
+  'ti':                                <TecnologiaIcon />,
+};
 
+function getIconeSetor(nome) {
+  const chave = nome
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
+  for (const [key, icon] of Object.entries(ICONES_SETOR)) {
+    const keyNorm = key.normalize('NFD').replace(/[̀-ͯ]/g, '');
+    if (chave.includes(keyNorm)) return icon;
+  }
+  return <DefaultIcon />;
+}
 
-const BotaoMenu = ({ to, icon, label, location }) => (
-  <MotionListItem
-    component={RouterLink}
-    to={to}
-    whileHover={{ scale: 1.05 }}
+const SetorCard = ({ nome, slug, id }) => {
+  const icone = getIconeSetor(nome);
+  const isPanorama = nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').includes('panorama geral');
+  const linkTo = isPanorama ? '/setor/Geral' : `/setor/${slug}`;
+
+  return (
+    <Paper
+      component={RouterLink}
+      to={linkTo}
+      state={{ setorId: id }}
+      elevation={0}
+      sx={{
+        position: 'relative',
+        overflow: 'hidden',
+        p: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1.5,
+        borderRadius: 3,
+        textDecoration: 'none',
+        background: '#ffffff',
+        border: '1px solid #e8edf5',
+        boxShadow: '0 2px 8px rgba(13, 71, 161, 0.06)',
+        transition: 'all 0.2s ease-in-out',
+        minHeight: 140,
+        '&:hover': {
+          boxShadow: '0 8px 24px rgba(13, 71, 161, 0.14)',
+          transform: 'translateY(-2px)',
+          borderColor: '#c5d8f5',
+        },
+      }}
+    >
+      {/* Círculo decorativo de fundo */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: -24,
+          right: -24,
+          width: 110,
+          height: 110,
+          borderRadius: '50%',
+          background: 'rgba(25, 118, 210, 0.07)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      <Avatar
+        sx={{
+          width: 42,
+          height: 42,
+          background: 'linear-gradient(135deg, #1565c0, #1976d2)',
+          boxShadow: '0 4px 12px rgba(21, 101, 192, 0.3)',
+          '& svg': { fontSize: 22 },
+        }}
+      >
+        {icone}
+      </Avatar>
+
+      <Typography
+        sx={{
+          fontWeight: 700,
+          fontSize: 15,
+          color: '#1a2744',
+          lineHeight: 1.3,
+          flexGrow: 1,
+        }}
+      >
+        {nome}
+      </Typography>
+
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <Typography sx={{ fontSize: 13, color: '#6b7280' }}>
+          Ver indicadores
+        </Typography>
+        <ArrowIcon sx={{ fontSize: 14, color: '#1976d2' }} />
+      </Box>
+    </Paper>
+  );
+};
+
+const ResumoPanel = ({ itens, ano, dataAtualizacao }) => (
+  <Box
     sx={{
-      display: 'flex',
-      alignItems: 'center',
-      py: 1.2,
-      px: 2,
-      mx: 1,
-      my: 1,
-      borderRadius: 2,
-      color: 'white',
-      textDecoration: 'none',
-      backgroundColor: location.pathname === to ? '#1565c0' : 'transparent',
-      boxShadow: location.pathname === to ? '0 2px 10px rgba(0,0,0,0.2)' : 'none',
-      transition: 'all 0.3s ease',
-      '&:hover': {
-        backgroundColor: '#1565c0',
-      }
+      width: 230,
+      flexShrink: 0,
+      border: '1px solid #e8edf5',
+      borderRadius: 3,
+      p: 2.5,
+      background: '#ffffff',
+      boxShadow: '0 2px 8px rgba(13, 71, 161, 0.06)',
+      alignSelf: 'flex-start',
     }}
   >
-    <ListItemIcon sx={{ color: 'white', minWidth: 36 }}>{icon}</ListItemIcon>
-    <ListItemText primary={label} primaryTypographyProps={{ fontWeight: 500 }} />
-  </MotionListItem>
+    <Typography
+      sx={{
+        fontSize: 11,
+        fontWeight: 700,
+        color: '#1976d2',
+        textTransform: 'uppercase',
+        letterSpacing: 1.5,
+        mb: 2,
+      }}
+    >
+      Resumo {ano}
+    </Typography>
+
+    {itens.length === 0 ? (
+      <Typography sx={{ fontSize: 13, color: '#9ca3af', textAlign: 'center', py: 3 }}>
+        Nenhum indicador resumido cadastrado.
+      </Typography>
+    ) : (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        {itens.map((item) => (
+          <Box key={item.id} sx={{ borderBottom: '1px solid #f0f4f8', pb: 1.5, '&:last-child': { borderBottom: 'none', pb: 0 } }}>
+            <Typography sx={{ fontSize: 12, color: '#6b7280', lineHeight: 1.3 }}>
+              {item.titulo}
+            </Typography>
+            <Typography sx={{ fontSize: 16, fontWeight: 700, color: '#1976d2', mt: 0.25 }}>
+              {item.valor}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+    )}
+
+    {dataAtualizacao && (
+      <Typography sx={{ fontSize: 11, color: '#9ca3af', mt: 2, borderTop: '1px solid #f0f4f8', pt: 1.5 }}>
+        Atualizado em {dataAtualizacao}
+      </Typography>
+    )}
+  </Box>
 );
 
-const LayoutBase = () => {
-  const location = useLocation();
-  const usuario = JSON.parse(localStorage.getItem('usuario'));
-  const perfil = usuario?.perfil;
-  const isAdmin = perfil === 'Administrador';
-  const isLider = perfil === 'Lideres';
-  const isEditor = perfil === 'Usuario_Editor';
-  const isViewer = perfil === 'Usuario_Visualizacao';
-  const isMenuPage = location.pathname === '/menu';
+const STORAGE_KEY = 'resumo_anual';
+const STORAGE_KEY_TS = 'resumo_anual_updated';
+
+const RESUMO_PADRAO = [
+  { id: 'p1', titulo: 'Nº de clientes Industrial', valor: '2.112', ano: String(new Date().getFullYear()) },
+  { id: 'p2', titulo: 'Clientes visitados',        valor: '593',   ano: String(new Date().getFullYear()) },
+  { id: 'p3', titulo: 'Propostas Apresentadas',    valor: '855',   ano: String(new Date().getFullYear()) },
+  { id: 'p4', titulo: 'Produtos existentes',       valor: '1.052', ano: String(new Date().getFullYear()) },
+  { id: 'p5', titulo: 'Propostas Faturadas',       valor: '236',   ano: String(new Date().getFullYear()) },
+];
+
+const lerResumo = (ano) => {
+  try {
+    const todos = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const doAno = todos.filter(i => String(i.ano) === String(ano));
+    return doAno.length > 0 ? doAno : RESUMO_PADRAO.filter(i => String(i.ano) === String(ano));
+  } catch {
+    return RESUMO_PADRAO;
+  }
+};
+
+const lerDataAtualizacao = () => {
+  try {
+    const ts = localStorage.getItem(STORAGE_KEY_TS);
+    if (!ts) return null;
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return null;
+    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+  } catch {
+    return null;
+  }
+};
+
+const Menu = () => {
   const [setores, setSetores] = useState([]);
-  const token = localStorage.getItem('token')
+  const anoAtual = new Date().getFullYear();
+  const [resumoItens, setResumoItens] = useState(() => lerResumo(anoAtual));
+  const [dataAtualizacao, setDataAtualizacao] = useState(() => lerDataAtualizacao());
+  const isMobile = useMediaQuery('(max-width:768px)');
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
     const fetchSetores = async () => {
       try {
         const response = await api.get('/setores', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` },
         });
-
         setSetores(response.data);
-
       } catch (error) {
         console.error('Erro ao buscar setores:', error);
       }
     };
 
     fetchSetores();
-  }, []);
+
+    // Escuta atualizações feitas pela página de Resumo Anual
+    const onResumoAtualizado = () => {
+      setResumoItens(lerResumo(anoAtual));
+      setDataAtualizacao(lerDataAtualizacao());
+    };
+    window.addEventListener('resumo-atualizado', onResumoAtualizado);
+    return () => window.removeEventListener('resumo-atualizado', onResumoAtualizado);
+  }, [token]);
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
-      <CssBaseline />
+    <Box>
+      <Box sx={{ mb: 4 }}>
+        <Typography
+          sx={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: '#1976d2',
+            textTransform: 'uppercase',
+            letterSpacing: 1.5,
+            mb: 0.5,
+          }}
+        >
+          Painel
+        </Typography>
 
-      {/* Sidebar */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: {
-            width: drawerWidth,
-            boxSizing: 'border-box',
-            backgroundColor: '#1976d2',
-            color: 'white',
-            pt: 1
-          }
-        }}
-      >
-        <Toolbar />
-        <List>
-          <BotaoMenu to="/menu" icon={<HomeIcon />} label="Menu Principal" location={location} />
+        <Typography sx={{ fontSize: 28, fontWeight: 800, color: '#1a2744', mb: 0.5 }}>
+          Indicadores Corporativos
+        </Typography>
 
-          {isAdmin && (
-            <BotaoMenu to="/usuarios" icon={<PersonAddIcon />} label="Cadastrar Usuário" location={location} />
-          )}
+        <Typography sx={{ fontSize: 14, color: '#6b7280' }}>
+          Selecione um setor para visualizar os indicadores detalhados.
+        </Typography>
+      </Box>
 
-          {(isAdmin) && (
-            <BotaoMenu to="/setores" icon={<DomainIcon />} label="Cadastrar Setor" location={location} />
-          )}
-
-          {(isAdmin) && (
-            <BotaoMenu to="/itens" icon={<InventoryIcon />} label="Cadastrar Indicadores" location={location} />
-          )}
-
-          {(isAdmin || isEditor) && (
-            <BotaoMenu to="/atualizar" icon={<UpdateIcon />} label="Atualizar Indicadores" location={location} />
-          )}
-
-          {(isAdmin || isEditor || isLider) && (
-            <BotaoMenu to="/dias-uteis" icon={<CalendarMonthIcon />} label="Dias Úteis por Setor" location={location} />
-          )}
-        </List>
-      </Drawer>
-
-
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', overflow: 'hidden' }}>
-        <Box sx={{ flexShrink: 0, bgcolor: '#1976d2', px: 2 }}>
-          <Box sx={{ backgroundColor: 'white', borderRadius: 2, px: 2, py: 1, display: 'inline-block', mt: 1, mb: 1 }}>
-            <ResponsiveAppBar />
-          </Box>
-        </Box>
-
-        <Box component="main" sx={{ flexGrow: 1, overflowY: 'auto', p: 3 }}>
-          <Toolbar />
-          {isMenuPage ? (
-            <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, marginLeft: '135px' }}>
-              {/* Cards (lado esquerdo) */}
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography
-                  variant="h5"
-                  gutterBottom
-                  sx={{ textAlign: 'center', fontWeight: 'bold', color: '#1976d2', marginBottom: '60px' }}
-                >
-                  PAINEL DE INDICADORES
-                </Typography>
-
-                <Grid container spacing={3} justifyContent="center">
-                  {setores
-                  .filter(({ nome }) => nome !== "Setor Padrão")
-                  .map(({ nome, id, slug }) => (
-                    <Grid item xs={12} sm={6} md={3} key={id}>
-                      <motion.div whileHover={{ scale: 1.05, y: -5 }} transition={{ duration: 0.3 }} style={{ height: '100%' }}>
-                        <Paper
-                          component={RouterLink}
-                          to={`/setor/${slug}`}
-                          state={{ setorId: id }}
-                          elevation={4}
-                          sx={{
-                            height: '100%',
-                            p: 3,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            borderRadius: 3,
-                            textDecoration: 'none',
-                            background: 'linear-gradient(to bottom, #e3f2fd, #ffffff)',
-                            color: '#0d47a1',
-                            transition: 'all 0.3s ease-in-out',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                            '&:hover': {
-                              background: '#bbdefb',
-                              boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
-                              color: '#002171',
-                            }
-                          }}
-                        >
-                          <Typography variant="h6" fontWeight="bold" align="center">{nome}</Typography>
-                          <Typography variant="body2" color="text.secondary" align="center" mt={1}>
-                            Ver Indicadores
-                          </Typography>
-                        </Paper>
-                      </motion.div>
-                    </Grid>
-                  ))}
+      <Box sx={{ display: 'flex', gap: 3, alignItems: 'flex-start' }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Grid container spacing={2}>
+            {setores
+              .filter(({ nome, oculto }) => nome !== 'Setor Padrão' && nome.toUpperCase() !== 'INATIVO' && !oculto)
+              .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
+              .map(({ nome, id, slug }) => (
+                <Grid key={id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                  <SetorCard nome={nome} slug={slug} id={id} />
                 </Grid>
-              </Box>
-
-              {/* Sidebar (lado direito) */}
-              <Box sx={{ width: 300, flexShrink: 0 }}>
-                <Sidebar />
-              </Box>
-            </Box>
-
-          ) : (
-            <Outlet />
-          )}
+              ))}
+          </Grid>
         </Box>
+
+        {!isMobile && <ResumoPanel itens={resumoItens} ano={anoAtual} dataAtualizacao={dataAtualizacao} />}
       </Box>
     </Box>
   );
 };
 
-export default LayoutBase;
+export default Menu;

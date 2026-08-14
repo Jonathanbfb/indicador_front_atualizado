@@ -16,13 +16,13 @@ const Sidebar: React.FC = () => (
       gap: "10px",
     }}
   >
-    <h2 style={{ marginTop: "80px", textAlign: "center" }}>Resumo 2025</h2>
+    <h2 style={{ marginTop: "80px", textAlign: "center" }}>Resumo</h2>
     {[
-      { label: "Nº de clientes Industrial:", value: "1.969" },
-      { label: "Clientes visitados:", value: "644" },
-      { label: "Propostas Realizadas:", value: "1.096" },
-      { label: "Produtos existentes:", value: "1.022" },
-      { label: "Produtos Vendidos:", value: "1.293"  },
+      { label: "Nº de clientes Industrial:", value: "2.112" },
+      { label: "Clientes visitados:", value: "593" },
+      { label: "Propostas Apresentadas:", value: "855" },
+      { label: "Produtos existentes:", value: "1.052" },
+      { label: "Propostas Faturadas:", value: "236"  },
     ].map((item, index) => (
       <div
         key={index}

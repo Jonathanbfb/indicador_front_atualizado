@@ -53,7 +53,7 @@ const Indicadores: React.FC = () => {
 
           {/* Nível 3 - 5 botões (centralizados com espaçamento e tamanho ajustado) */}
           {[
-            { heading: "Setor Administrativo", subheading: "Coordenadora: Edivalda Martins", path: "/setor/Administracao" },
+            { heading: "Setor Back Office", subheading: "Coordenadora: Edivalda Martins", path: "/setor/Administracao" },
            // { heading: "Setor Pesquisa de Mercado", subheading: "", path: "/setor/Pesquisa" },
             { heading: "Setor Redes Sociais", subheading: "Coordenador: Diego Nobre", path: "/setor/RedesSociais" },
             { heading: "Setor Pesquisa & Inteligência de Mercado", subheading: "Coordenadora: Lidiane Laborda", path: "/setor/Mercado" },
