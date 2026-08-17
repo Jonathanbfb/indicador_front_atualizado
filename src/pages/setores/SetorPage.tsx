@@ -225,9 +225,12 @@ export default function SetorPage() {
             .map(([nome]) => nome)
         );
 
-        // Exibe todos os indicadores, exceto os ocultos e os criados só em anos futuros
+        // Separa itens CRM (crm_key preenchido) dos regulares
+        const itensCrm: any[] = (valoresRes.data.indicadores as any[]).filter((ind: any) => ind.crm_key);
+
+        // Exibe todos os indicadores regulares, exceto os ocultos, CRM e os criados só em anos futuros
         const indicadoresFromApi = (valoresRes.data.indicadores as any[])
-          .filter((ind: any) => !nomesDoFuturo.has(ind.nome) && !ind.oculto)
+          .filter((ind: any) => !nomesDoFuturo.has(ind.nome) && !ind.oculto && !ind.crm_key)
           .sort((a: any, b: any) => {
             if (a.ordem == null && b.ordem == null) return 0;
             if (a.ordem == null) return 1;
@@ -513,44 +516,33 @@ export default function SetorPage() {
           return linha;
         };
 
-        let linhaAdesoes: any   = null;
-        let linhaRenovacoes: any = null;
-
-        let linhaEquipeInterna: any  = null;
-        let linhaEquipeValor: any    = null;
-
-        if (isBackOffice) {
-          try {
-            const [adesaoRes, renovacaoRes, equipeRes, equipeValorRes] = await Promise.all([
-              api.get(`/propostas/adesoes?ano=${selectedYear}`),
-              api.get(`/propostas/renovacoes?ano=${selectedYear}`),
-              api.get(`/propostas/equipe-interna?ano=${selectedYear}`),
-              api.get(`/propostas/equipe-interna-valor?ano=${selectedYear}`),
-            ]);
-            linhaAdesoes = buildLinhaCrm(
-              "Número de Adesões",
-              "Propostas com 'ADESÃO/ADESAO' no nome, status Ganha+Ativa, data de modificação (CRM).",
-              adesaoRes.data.porMesPorInst
-            );
-            linhaRenovacoes = buildLinhaCrm(
-              "Número de Renovações",
-              "Propostas com 'RENOVAÇÃO/RENOVACAO' no nome, status Ganha+Ativa, data de modificação (CRM).",
-              renovacaoRes.data.porMesPorInst
-            );
-            linhaEquipeInterna = buildLinhaCrm(
-              "Propostas Criadas pela Equipe Interna",
-              "Quantidade de propostas criadas pelas Consultoras PJ Internas (Brenda, Joycilene, Keite), todos os status, data de criação (CRM).",
-              equipeRes.data.porMesPorInst
-            );
-            linhaEquipeValor = buildLinhaCrm(
-              "Total de Propostas Criadas pela Equipe Interna R$",
-              "Valor total (R$) das propostas criadas pelas Consultoras PJ Internas (Brenda, Joycilene, Keite), todos os status, data de criação (CRM).",
-              equipeValorRes.data.porMesPorInst,
-              true
-            );
-          } catch (_e) {
-            // falha silenciosa
-          }
+        // Busca dados CRM para cada item com crm_key
+        const linhasCrm: any[] = [];
+        if (itensCrm.length > 0) {
+          const DESCRICOES: Record<string, string> = {
+            'adesoes':              "Propostas com 'ADESÃO/ADESAO' no nome, status Ganha+Ativa, data de modificação (CRM).",
+            'renovacoes':           "Propostas com 'RENOVAÇÃO/RENOVACAO' no nome, status Ganha+Ativa, data de modificação (CRM).",
+            'equipe-interna':       "Quantidade de propostas criadas pelas Consultoras PJ Internas, todos os status, data de criação (CRM).",
+            'equipe-interna-valor': "Valor total (R$) das propostas criadas pelas Consultoras PJ Internas, todos os status, data de criação (CRM).",
+          };
+          await Promise.all(
+            itensCrm
+              .sort((a: any, b: any) => (a.ordem ?? 0) - (b.ordem ?? 0))
+              .map(async (itemCrm: any) => {
+                try {
+                  const res = await api.get(`/propostas/${itemCrm.crm_key}?ano=${selectedYear}`);
+                  const linha = buildLinhaCrm(
+                    itemCrm.nome,
+                    DESCRICOES[itemCrm.crm_key] ?? '',
+                    res.data.porMesPorInst,
+                    itemCrm.moeda ?? false
+                  );
+                  linha._ordem = itemCrm.ordem ?? 0;
+                  linhasCrm.push(linha);
+                } catch (_e) { /* falha silenciosa */ }
+              })
+          );
+          linhasCrm.sort((a, b) => a._ordem - b._ordem);
         }
 
         linhaProfissionais._hidden = true;
@@ -563,10 +555,7 @@ export default function SetorPage() {
           linhaHoras,
           linhaSomaAtividades,
           linhaMediaHoras,
-          ...(linhaAdesoes       ? [linhaAdesoes]       : []),
-          ...(linhaRenovacoes    ? [linhaRenovacoes]    : []),
-          ...(linhaEquipeInterna ? [linhaEquipeInterna] : []),
-          ...(linhaEquipeValor   ? [linhaEquipeValor]   : []),
+          ...linhasCrm,
           ...orderedRows,
         ];
 

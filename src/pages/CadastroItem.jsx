@@ -478,6 +478,14 @@ const CadastroItem = () => {
                     <span style={{ color: item.oculto ? '#9ca3af' : '#1976d2', fontWeight: 500 }}>
                       {item.nome}
                     </span>
+                    {item.crm_key && (
+                      <span style={{
+                        fontSize: 11, color: '#ffffff', background: '#0d47a1',
+                        borderRadius: 4, padding: '1px 6px', fontWeight: 700,
+                      }}>
+                        CRM
+                      </span>
+                    )}
                     {item.oculto && (
                       <span style={{
                         fontSize: 11, color: '#9ca3af', background: '#f3f4f6',
