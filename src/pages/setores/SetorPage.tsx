@@ -466,7 +466,8 @@ export default function SetorPage() {
         const buildLinhaCrm = (
           nome: string,
           descricao: string,
-          porMes: Record<number, { fieam: number; sesi: number; senai: number; iel: number; total: number }>
+          porMes: Record<number, { fieam: number; sesi: number; senai: number; iel: number; total: number }>,
+          moeda = false
         ): any => {
           const linha: any = {
             indicadores: nome,
@@ -475,15 +476,21 @@ export default function SetorPage() {
             jul: "-", ago: "-", set: "-", out: "-", nov: "-", dez: "-",
             acumulado: { fieam: "-", sesi: "-", senai: "-", iel: "-", "total geral": "-" },
             valoresPorMesPorInst: {} as Record<number, Record<string, string>>,
+            moeda,
           };
 
-          const fmtN = (n: number) => n > 0 ? n.toLocaleString("pt-BR") : "-";
+          const fmtN = (n: number) => {
+            if (n <= 0) return "-";
+            return moeda
+              ? n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+              : n.toLocaleString("pt-BR");
+          };
           let acFieam = 0, acSesi = 0, acSenai = 0, acIel = 0, acTotal = 0;
 
           MES_KEYS.forEach((mesKey, idx) => {
             const m = idx + 1;
             const d = porMes[m];
-            if (d && d.total > 0) linha[mesKey] = d.total.toLocaleString("pt-BR");
+            if (d && d.total > 0) linha[mesKey] = fmtN(d.total);
             linha.valoresPorMesPorInst[m] = {
               fieam: fmtN(d?.fieam ?? 0),
               sesi:  fmtN(d?.sesi  ?? 0),
@@ -509,14 +516,16 @@ export default function SetorPage() {
         let linhaAdesoes: any   = null;
         let linhaRenovacoes: any = null;
 
-        let linhaEquipeInterna: any = null;
+        let linhaEquipeInterna: any  = null;
+        let linhaEquipeValor: any    = null;
 
         if (isBackOffice) {
           try {
-            const [adesaoRes, renovacaoRes, equipeRes] = await Promise.all([
+            const [adesaoRes, renovacaoRes, equipeRes, equipeValorRes] = await Promise.all([
               api.get(`/propostas/adesoes?ano=${selectedYear}`),
               api.get(`/propostas/renovacoes?ano=${selectedYear}`),
               api.get(`/propostas/equipe-interna?ano=${selectedYear}`),
+              api.get(`/propostas/equipe-interna-valor?ano=${selectedYear}`),
             ]);
             linhaAdesoes = buildLinhaCrm(
               "Número de Adesões",
@@ -530,8 +539,14 @@ export default function SetorPage() {
             );
             linhaEquipeInterna = buildLinhaCrm(
               "Propostas Criadas pela Equipe Interna",
-              "Propostas criadas pelas Consultoras PJ Internas (Brenda, Joycilene, Keite), todos os status, data de criação (CRM).",
+              "Quantidade de propostas criadas pelas Consultoras PJ Internas (Brenda, Joycilene, Keite), todos os status, data de criação (CRM).",
               equipeRes.data.porMesPorInst
+            );
+            linhaEquipeValor = buildLinhaCrm(
+              "Total de Propostas Criadas pela Equipe Interna R$",
+              "Valor total (R$) das propostas criadas pelas Consultoras PJ Internas (Brenda, Joycilene, Keite), todos os status, data de criação (CRM).",
+              equipeValorRes.data.porMesPorInst,
+              true
             );
           } catch (_e) {
             // falha silenciosa
@@ -551,6 +566,7 @@ export default function SetorPage() {
           ...(linhaAdesoes       ? [linhaAdesoes]       : []),
           ...(linhaRenovacoes    ? [linhaRenovacoes]    : []),
           ...(linhaEquipeInterna ? [linhaEquipeInterna] : []),
+          ...(linhaEquipeValor   ? [linhaEquipeValor]   : []),
           ...orderedRows,
         ];
 
